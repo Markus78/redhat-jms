@@ -1,0 +1,7 @@
+@host = localhost
+@url = http://{{host}}:8080
+
+
+
+### test
+GET {{url}}/bootable-eap-0.0.1-SNAPSHOT

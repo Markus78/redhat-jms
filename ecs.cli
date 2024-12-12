@@ -1,0 +1,91 @@
+# embed-server --server-config=${config:standalone.xml} --std-out=echo
+
+echo System properties
+
+/system-property=external.beda.sync.rest.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=external.folkbokforing.sync.rest.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=external.student.sync.rest.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=nya.properties.location:add(value=/opt/nya/ecs-as/etc/)
+/system-property=nya.properties.name:add(value=nya.server.properties)
+/system-property=nya.properties.local.name:add(value=nya.ecs.properties)
+/system-property=nya.db.client.program.name:add(value=ecs-as)
+/system-property=jboss.as.management.blocking.timeout:add(value=600)
+/system-property=auktorisering.base.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=expert.httpd.base.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=nya.idp.ecs.entityid:add(value=$${env.TEST:https://localhost:8443})
+/system-property=billy.base.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=dokumentarkiv.base.url:add(value=$${env.TEST:https://localhost:8443})
+/system-property=javax.net.ssl.trustStore:add(value=$${env.TEST:/tmp/truststore.jks})
+/system-property=javax.net.ssl.trustStorePassword:add(value=$${env.TEST:changeit})
+/system-property=unleash.url:add(value=$${env.TEST:https://localhost:8443}/api)
+/system-property=unleash.token:add(value=$${env.TEST:https://localhost:8443})
+/system-property=otel.grpc.url:add(value=http://localhost:14250)
+/system-property=otel.http.url:add(value=http://localhost:14251)
+
+echo Loggging
+
+run-batch --file=logging.cli --verbose
+
+echo Datasources
+
+/subsystem=transactions:write-attribute(name=default-timeout,value=300)
+
+/interface=private/:add(inet-address="$${jboss.bind.address.private:0.0.0.0}")
+/interface=public/:write-attribute(name="inet-address" , value="$${jboss.bind.public:0.0.0.0}")
+/interface=management/:write-attribute(name="inet-address" , value="$${jboss.bind.private:0.0.0.0}")
+
+# Sockets
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=jms-remote-0:add(port="$${env.JBOSS_JMS_SERVER_PORT:${jboss.http.port}}", host="$${env.JBOSS_JMS_SERVER_ADDRESS:${jboss.jms.server.address}}")
+
+# Undertow
+
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-parameters, value=15000)
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=max-header-size, value=32768)
+/subsystem=undertow/server=default-server/ajp-listener=ajp:add(socket-binding=ajp)
+#embed-server start
+/subsystem=messaging-activemq/server=default:write-attribute(name=security-enabled, value=false)
+
+# http-connector
+/subsystem=messaging-activemq/server=default/http-connector=http-connector:write-attribute(name="socket-binding",value="http")
+/subsystem=messaging-activemq/server=default/http-connector=http-connector:write-attribute(name="endpoint",value="http-acceptor")
+
+# http-acceptor
+/subsystem=messaging-activemq/server=default/http-connector=http-connector-throughput:write-attribute(name="socket-binding",value="http")
+/subsystem=messaging-activemq/server=default/http-connector=http-connector-throughput:write-attribute(name="endpoint",value="http-acceptor-throughput")
+
+/subsystem=messaging-activemq/server=default/http-connector=jms-remote-0-connector:add(socket-binding="jms-remote-0", endpoint="http-acceptor")
+/subsystem=messaging-activemq/server=default/http-acceptor=http-acceptor:write-attribute(name=http-listener,value=default)
+/subsystem=messaging-activemq/server=default/http-acceptor=http-acceptor-throughput:write-attribute(name=http-listener,value=default)
+/subsystem=messaging-activemq/server=default/cluster-connection=my-cluster:add(cluster-connection-address="jms", connector-name="http-connector",message-load-balancing-type="STRICT" ,static-connectors=["jms-remote-0-connector"])
+/subsystem=messaging-activemq/server=default/jms-queue=EligCRQueue:add(entries=[java:/jms/EligCRQueue])
+/subsystem=messaging-activemq/server=default/jms-queue=ComJobANEmailQueue:add(entries=[java:/jms/ComJobANEmailQueue])
+/subsystem=messaging-activemq/server=default/jms-queue=ComJobCAEmailQueue:add(entries=[java:/jms/ComJobCAEmailQueue])
+/subsystem=messaging-activemq/server=default/jms-queue=ComJobPCMSnailmailQueue:add(entries=[java:/jms/ComJobPCMSnailmailQueue])
+/subsystem=messaging-activemq/server=default/jms-queue=ComJobPCMReminderEmailQueue:add(entries=[java:/jms/ComJobPCMReminderEmailQueue])
+
+/subsystem=messaging-activemq/server=default/connection-factory=CollectStatisticsQueueCF:add(connectors=["http-connector"], entries=["java:/jms/CollectStatisticsQueueCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=EligCRQCF:add(connectors=["http-connector"], entries=["java:/jms/EligCRQCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=ComJobANSnailmailQCF:add(connectors=["http-connector"], entries=["java:/jms/ComJobANSnailmailQCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=ComJobANEmailQCF:add(connectors=["http-connector"], entries=["java:/jms/ComJobANEmailQCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=ComJobCAEmailQCF:add(connectors=["http-connector"], entries=["java:/jms/ComJobCAEmailQCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=ComJobPCMSnailmailQCF:add(connectors=["http-connector"], entries=["java:/jms/ComJobPCMSnailmailQCF"])
+/subsystem=messaging-activemq/server=default/connection-factory=ComJobPCMReminderEmailQCF:add(connectors=["http-connector"], entries=["java:/jms/ComJobPCMReminderEmailQCF"])
+
+/subsystem=messaging-activemq/remote-connector=netty-remote-throughput:add(socket-binding=messaging-remote-throughput)
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=messaging-remote-throughput:add(host="$${jms.broker.host:127.0.0.1}", port="$${jms.broker.port:61616}")
+/subsystem=messaging-activemq/pooled-connection-factory=activemq-ra-remote:add(transaction=xa,entries=[java:/RemoteJmsXA, java:jboss/RemoteJmsXA],connectors=[netty-remote-throughput], user="$${jms.broker.user:artemis}", password="$${jms.broker.pwd:artemis}", initial-connect-attempts=1, reconnect-attempts=-1, retry-interval=1000, max-retry-interval=60000, retry-interval-multiplier=1.5)
+/subsystem=naming/binding=java\:global\/remoteContext:add(binding-type=external-context, class=javax.naming.InitialContext, module=org.apache.activemq.artemis, environment=[java.naming.factory.initial=org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory, java.naming.provider.url="tcp://$${jms.broker.host:127.0.0.1}:$${jms.broker.port:61616}", queue.sms-request=integration-sms.sms-request, topic.anvandare=anvandare, queue.avmagasinera-dokument=ecs.avmagasinera-dokument,queue.etablera-dokument=ecs.etablera-dokument,queue.indexera-dokument=ecs.indexera-dokument,queue.klassificera-dokument=mind.klassificera-dokument,queue.ska-lagra-om-indexering=mind.ska-lagra-om-indexering,queue.ska-ta-bort-indexering=mind.ska-ta-bort-indexering,queue.skanna-dokument=virus-skanning.skanna-dokument,queue.spara-utbildningsinformation=utbildningsinformation.spara-utbildningsinformation,queue.spara-gymnasiemerit=ecs.beredning.spara-svensk-gymnasiemerit,queue.ta-bort-gymnasiemerit=ecs.beredning.ta-bort-svensk-gymnasiemerit,queue.skapa-gruppmeddelanden=aws.skapa-gruppmeddelanden, java.naming.security.principal="$${jms.broker.user:artemis}", java.naming.security.credentials="$${jms.broker.pwd:artemis}"])
+/subsystem=naming/binding=java\:\/sms-request:add(lookup=java:global/remoteContext/sms-request,binding-type=lookup)
+/subsystem=naming/binding=java\:\/anvandare:add(lookup=java:global/remoteContext/anvandare,binding-type=lookup)
+/subsystem=naming/binding=java\:\/avmagasinera-dokument:add(lookup=java:global/remoteContext/avmagasinera-dokument,binding-type=lookup)
+/subsystem=naming/binding=java\:\/etablera-dokument:add(lookup=java:global/remoteContext/etablera-dokument,binding-type=lookup)
+/subsystem=naming/binding=java\:\/indexera-dokument:add(lookup=java:global/remoteContext/indexera-dokument,binding-type=lookup)
+/subsystem=naming/binding=java\:\/ska-lagra-om-indexering:add(lookup=java:global/remoteContext/ska-lagra-om-indexering,binding-type=lookup)
+/subsystem=naming/binding=java\:\/ska-ta-bort-indexering:add(lookup=java:global/remoteContext/ska-ta-bort-indexering,binding-type=lookup)
+/subsystem=naming/binding=java\:\/klassificera-dokument:add(lookup=java:global/remoteContext/klassificera-dokument,binding-type=lookup)
+/subsystem=naming/binding=java\:\/skanna-dokument:add(lookup=java:global/remoteContext/skanna-dokument,binding-type=lookup)
+/subsystem=naming/binding=java\:\/spara-utbildningsinformation:add(lookup=java:global/remoteContext/spara-utbildningsinformation,binding-type=lookup)
+/subsystem=naming/binding=java\:\/spara-gymnasiemerit:add(lookup=java:global/remoteContext/spara-gymnasiemerit,binding-type=lookup)
+/subsystem=naming/binding=java\:\/ta-bort-gymnasiemerit:add(lookup=java:global/remoteContext/ta-bort-gymnasiemerit,binding-type=lookup)
+/subsystem=naming/binding=java\:\/skapa-gruppmeddelanden:add(lookup=java:global/remoteContext/skapa-gruppmeddelanden,binding-type=lookup)
+

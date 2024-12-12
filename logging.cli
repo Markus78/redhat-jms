@@ -1,0 +1,30 @@
+echo Logging
+
+echo Pattern (add MDC)
+/subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern, value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %X %s%e%n")
+
+echo file logger
+
+/subsystem=logging/periodic-rotating-file-handler=FILE:remove
+/subsystem=logging/size-rotating-file-handler=FILE:add(file={"relative-to"=>"jboss.server.log.dir", path=server.log}, rotate-size=100m, max-backup-index=10, autoflush="true", named-formatter=PATTERN)
+
+echo JSON file logging
+
+/subsystem=logging/json-formatter=JSON:add(pretty-print=true, exception-output-type=formatted)
+/subsystem=logging/size-rotating-file-handler=FILE-JSON:add(file={"relative-to"=>"jboss.server.log.dir", path=server.json}, rotate-size=500m, max-backup-index=10, autoflush="true", named-formatter=JSON)
+/subsystem=logging/root-logger=ROOT:add-handler(name=FILE-JSON)
+
+
+echo Add loggers
+
+# Set default log level for se.uhr.nya to INFO
+/subsystem=logging/logger=se.uhr.nya:add(level=INFO, use-parent-handlers=true)
+
+/subsystem=logging/logger=org.apache.tomcat.util.modeler:add(level=WARN, use-parent-handlers=true)
+/subsystem=logging/logger=jacorb:add(level=WARN, use-parent-handlers=true)
+/subsystem=logging/logger=jacorb.config:add(level=WARN, use-parent-handlers=true)
+/subsystem=logging/logger=org.jboss.jca.core.recovery:add(level=WARN, use-parent-handlers=true)
+/subsystem=logging/logger=org.apache.fop.layoutmgr:add(level=WARN, use-parent-handlers=true)
+/subsystem=logging/logger=org.jboss.jca.core.tx.jbossts.XAResourceRecoveryImpl:add(level=WARN, use-parent-handlers=true)
+#/subsystem=logging/logger=org.apache.activemq:add(level=DEBUG, use-parent-handlers=true)
+
