@@ -54,7 +54,7 @@ sudo podman run --rm --name eap8_1 \
 
 Once both of these are up and running on Server1 and Server2 you can test that JMS works fine by using curl on your Builder node 
 
-curl -X POST  http://Server1:19080/bootable-jms-test/message
+curl -X POST  http://Server1:19080/bootable-jms-test/message?number=100
 
 After this curl you should see in podman logs for the containers on Server1 and Server2 that they are working fine and the Messages are beeing clustered between Server1 and Server2
 
