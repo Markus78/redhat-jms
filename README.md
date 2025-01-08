@@ -20,11 +20,11 @@ java -Djboss.jms.server.address=localhost -jar target/bootable-jms-test-bootable
 ## Send message
 
 ```bash
-curl -X POST  http://localhost:8080/bootable-jms-test/message
+curl -X POST  http://localhost:19080/bootable-jms-test/message
 ```
 
 Send 10 messages
 
 ```bash
-curl -X POST  http://localhost:8080/bootable-jms-test/message?number=10
+curl -X POST  http://localhost:19080/bootable-jms-test/message?number=10
 ```
