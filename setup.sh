@@ -4,10 +4,11 @@ TARGET_HOST1=fantomen-00.nya-srv.its.umu.se
 TARGET_HOST2=fantomen-01.nya-srv.its.umu.se
 
 echo "# Build bootable jar"
-./mvnw package
+./mvnw clean package
 
 echo "# Build and export image"
 rm -f jboss-eap-8
+rm -f jboss-eap-8.tar
 podman build . -t jboss-eap-8
 podman save --output jboss-eap-8.tar jboss-eap-8
 
