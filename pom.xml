@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>test</groupId>
     <artifactId>bootable-eap</artifactId>
@@ -12,22 +12,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
 
-        <jboss-eap-ee>8.0.4.GA-redhat-00006</jboss-eap-ee>
-        <version.jboss.eap.xp>5.0.0.GA-redhat-00009</version.jboss.eap.xp>
+        <version.wildfly>35.0.1.Final</version.wildfly>
     </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.jboss.bom</groupId>
-                <artifactId>jboss-eap-ee</artifactId>
-                <version>${jboss-eap-ee}</version>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>wildfly-ee-with-tools</artifactId>
+                <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <dependency>
-                <groupId>org.jboss.bom</groupId>
-                <artifactId>jboss-eap-xp-microprofile</artifactId>
-                <version>${version.jboss.eap.xp}</version>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>wildfly-expansion</artifactId>
+                <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -96,34 +97,11 @@
                 <artifactId>wildfly-jar-maven-plugin</artifactId>
                 <version>12.0.0.Final</version>
                 <configuration>
-                    <channels>
-                        <channel>
-                            <manifest>
-                                <groupId>org.jboss.eap.channels</groupId>
-                                <artifactId>eap-8.0</artifactId>
-                            </manifest>
-                        </channel>
-                        <channel>
-                            <manifest>
-                                <groupId>org.jboss.eap.channels</groupId>
-                                <artifactId>eap-xp-5.0</artifactId>
-                            </manifest>
-                        </channel>
-                    </channels>
-
                     <feature-packs>
                         <feature-pack>
-                            <location>org.jboss.eap.xp:wildfly-galleon-pack</location>
+                            <location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</location>
                         </feature-pack>
-                        <!--
-                        <feature-pack>
-                            <groupId>se.uhr.nya.jboss</groupId>
-                            <artifactId>jboss.eap.galleon</artifactId>
-                            <version>1.0.0-SNAPSHOT</version>
-                        </feature-pack>
-                        -->
                     </feature-packs>
-
                     <hollow-jar>true</hollow-jar>
                     <layers>
                         <layer>jaxrs-server</layer>
@@ -132,16 +110,9 @@
                         <layer>microprofile-health</layer>
                         <layer>microprofile-openapi</layer>
                         <layer>microprofile-config</layer>
-                        <!--
-                        <layer>microprofile-metrics</layer>
-                        <layer>datasources</layer>
-                        <layer>db2-driver</layer>
-                        -->
-
                         <layer>embedded-activemq</layer>
                     </layers>
                     <excluded-layers>
-                        <!-- <layer>jpa</layer> -->
                         <layer>deployment-scanner</layer>
                     </excluded-layers>
                     <extra-server-content-dirs>
@@ -150,7 +121,7 @@
                     <cli-sessions>
                         <cli-session>
                             <script-files>
-                               <script>ecs.cli</script>
+                                <script>ecs.cli</script>
                             </script-files>
                         </cli-session>
                     </cli-sessions>
@@ -168,11 +139,4 @@
             </plugin>
         </plugins>
     </build>
-    <repositories>
-       <repository>
-            <id>redhat-ga</id>
-            <name>Redhat GA</name>
-            <url>https://maven.repository.redhat.com/ga/</url>
-        </repository>
-    </repositories>
 </project>
